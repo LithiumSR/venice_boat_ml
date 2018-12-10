@@ -67,27 +67,27 @@ class BoatLoader:
         folders = [x[0] for x in os.walk(os.getcwd() + "/data/" + directory)]
         for folder in folders:
             files = glob.glob(folder + "/*.jpg")
-            truth = open(folder + "/ground_truth.txt", "r")
-            map_truth = {}
-            line = truth.readline()
-            while line:
-                entry = line.split(";")
+            with open(folder + "/ground_truth.txt", "r") as truth:
+                map_truth = {}
                 line = truth.readline()
-                if self.mode != Mode.detection:
-                    if "Snapshot" in entry[1].strip():
-                        continue
-                    if entry[1].strip() == "Mototopo corto":
-                        entry[1] = "Mototopo"
-                elif self.vstype == "Water" and self.mode == Mode.detection:
-                    if entry[1].strip() != "Water":
-                        entry[1] = "Boat"
-                elif self.vstype != "Water" and self.mode == Mode.detection:
-                    if "Snapshot" in entry[1].strip():
-                        continue
-                    if entry[1].strip() != self.vstype:
-                        entry[1] = "Not" + self.vstype
-                map_truth[entry[0].strip()] = entry[1].strip().replace(" ", "").replace(":", "")
-            truth.close()
+                while line:
+                    entry = line.split(";")
+                    line = truth.readline()
+                    if self.mode != Mode.detection:
+                        if "Snapshot" in entry[1].strip():
+                            continue
+                        if entry[1].strip() == "Mototopo corto":
+                            entry[1] = "Mototopo"
+                    elif self.vstype == "Water" and self.mode == Mode.detection:
+                        if entry[1].strip() != "Water":
+                            entry[1] = "Boat"
+                    elif self.vstype != "Water" and self.mode == Mode.detection:
+                        if "Snapshot" in entry[1].strip():
+                            continue
+                        if entry[1].strip() != self.vstype:
+                            entry[1] = "Not" + self.vstype
+                    map_truth[entry[0].strip()] = entry[1].strip().replace(" ", "").replace(":", "")
+
             for file in files:
                 img = image.load_img(file, target_size=(224, 224))
                 img_data = image.img_to_array(img)
