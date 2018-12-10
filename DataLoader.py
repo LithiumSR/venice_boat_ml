@@ -1,9 +1,11 @@
 import glob
 import os
 from enum import Enum
+
+
 from keras.preprocessing import image
 from keras.applications.vgg16 import VGG16
-from keras.applications.vgg16 import preprocess_input
+from keras.applications.vgg19 import VGG19
 import numpy as np
 
 
@@ -11,11 +13,18 @@ class Mode(Enum):
     detection = 0
     classification = 1
 
+class NetworkArchitecture(Enum):
+    VGG16 = 1
+    VGG19 = 2
 
 class BoatLoader:
 
-    def __init__(self, mode, vstype="Water"):
-        self.model = VGG16(weights='imagenet', include_top=False)
+    def __init__(self, mode, vstype="Water", network=NetworkArchitecture.VGG16):
+        if network == NetworkArchitecture.VGG16:
+            self.model = VGG16(weights='imagenet', include_top=False)
+        else:
+            self.model = VGG19(weights='imagenet', include_top=False)
+        self.network = network
         self.mode = mode
         self.vstype = vstype.strip()
 
@@ -29,7 +38,13 @@ class BoatLoader:
                 img = image.load_img(file, target_size=(224, 224))
                 img_data = image.img_to_array(img)
                 img_data = np.expand_dims(img_data, axis=0)
-                img_data = preprocess_input(img_data)
+                if self.network == VGG16:
+                    from keras.applications.vgg16 import preprocess_input
+                    img_data = preprocess_input(img_data)
+                else:
+                    from keras.applications.vgg19 import preprocess_input
+                    img_data = preprocess_input(img_data)
+
                 vgg16_feature = self.model.predict(img_data)
                 from BoatPhoto import BoatPhoto
 
@@ -77,7 +92,12 @@ class BoatLoader:
                 img = image.load_img(file, target_size=(224, 224))
                 img_data = image.img_to_array(img)
                 img_data = np.expand_dims(img_data, axis=0)
-                img_data = preprocess_input(img_data)
+                if self.network == VGG16:
+                    from keras.applications.vgg16 import preprocess_input
+                    img_data = preprocess_input(img_data)
+                else:
+                    from keras.applications.vgg19 import preprocess_input
+                    img_data = preprocess_input(img_data)
                 vgg16_feature = self.model.predict(img_data)
                 from BoatPhoto import BoatPhoto
 
