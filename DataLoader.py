@@ -2,20 +2,22 @@ import glob
 import os
 from enum import Enum
 
-
 from keras.preprocessing import image
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
 import numpy as np
+import tqdm
 
 
 class Mode(Enum):
     detection = 0
     classification = 1
 
+
 class NetworkArchitecture(Enum):
     VGG16 = 1
     VGG19 = 2
+
 
 class BoatLoader:
 
@@ -32,9 +34,12 @@ class BoatLoader:
 
         list = []
         folders = [x[0] for x in os.walk(os.getcwd() + "/data/" + directory)]
+        print("Parsing folders of the ARGOS training set")
+        progressbar = tqdm.tqdm(total=self._getnumberfiles(folders))
         for folder in folders:
             files = glob.glob(folder + "/*.jpg")
             for file in files:
+                progressbar.update(1)
                 img = image.load_img(file, target_size=(224, 224))
                 img_data = image.img_to_array(img)
                 img_data = np.expand_dims(img_data, axis=0)
@@ -60,56 +65,61 @@ class BoatLoader:
                             boatType = "Not" + self.vstype
                     elem = BoatPhoto(boatType, vgg16_feature, file)
                     list.append(elem)
+        progressbar.close()
         return list
 
-    def parseArgosTesting(self, directory):
-        list = []
-        folders = [x[0] for x in os.walk(os.getcwd() + "/data/" + directory)]
-        for folder in folders:
-            files = glob.glob(folder + "/*.jpg")
-            with open(folder + "/ground_truth.txt", "r") as truth:
-                map_truth = {}
+    def parseArgosTesting(self, folder):
+        dataset = []
+        path = os.getcwd() + "/data/" + folder
+        files = glob.glob(path + "/*.jpg")
+        with open(path + "/ground_truth.txt", "r") as truth:
+            map_truth = {}
+            line = truth.readline()
+            while line:
+                entry = line.split(";")
                 line = truth.readline()
-                while line:
-                    entry = line.split(";")
-                    line = truth.readline()
-                    if self.mode != Mode.detection:
-                        if "Snapshot" in entry[1].strip():
-                            continue
-                        if entry[1].strip() == "Mototopo corto":
-                            entry[1] = "Mototopo"
-                    elif self.vstype == "Water" and self.mode == Mode.detection:
-                        if entry[1].strip() != "Water":
-                            entry[1] = "Boat"
-                    elif self.vstype != "Water" and self.mode == Mode.detection:
-                        if "Snapshot" in entry[1].strip():
-                            continue
-                        if entry[1].strip() != self.vstype:
-                            entry[1] = "Not" + self.vstype
-                    map_truth[entry[0].strip()] = entry[1].strip().replace(" ", "").replace(":", "")
+                if self.mode != Mode.detection:
+                    if "Snapshot" in entry[1].strip():
+                        continue
+                    if entry[1].strip() == "Mototopo corto":
+                        entry[1] = "Mototopo"
+                elif self.vstype == "Water" and self.mode == Mode.detection:
+                    if entry[1].strip() != "Water":
+                        entry[1] = "Boat"
+                elif self.vstype != "Water" and self.mode == Mode.detection:
+                    if "Snapshot" in entry[1].strip():
+                        continue
+                    if entry[1].strip() != self.vstype:
+                        entry[1] = "Not" + self.vstype
+                map_truth[entry[0].strip()] = entry[1].strip().replace(" ", "").replace(":", "")
+        print("\nAnalyzing files of the ARGOS testing dataset")
+        for file in tqdm.tqdm(files):
+            img = image.load_img(file, target_size=(224, 224))
+            img_data = image.img_to_array(img)
+            img_data = np.expand_dims(img_data, axis=0)
+            if self.network == VGG16:
+                from keras.applications.vgg16 import preprocess_input
+                img_data = preprocess_input(img_data)
+            else:
+                from keras.applications.vgg19 import preprocess_input
+                img_data = preprocess_input(img_data)
+            vgg16_feature = self.model.predict(img_data)
+            from BoatPhoto import BoatPhoto
 
-            for file in files:
-                img = image.load_img(file, target_size=(224, 224))
-                img_data = image.img_to_array(img)
-                img_data = np.expand_dims(img_data, axis=0)
-                if self.network == VGG16:
-                    from keras.applications.vgg16 import preprocess_input
-                    img_data = preprocess_input(img_data)
-                else:
-                    from keras.applications.vgg19 import preprocess_input
-                    img_data = preprocess_input(img_data)
-                vgg16_feature = self.model.predict(img_data)
-                from BoatPhoto import BoatPhoto
-
-                if os.path.basename(os.path.normpath(file)) in map_truth:
-                    elem = BoatPhoto(map_truth[os.path.basename(os.path.normpath(file))], vgg16_feature, file)
-                    list.append(elem)
-        return list
+            if os.path.basename(os.path.normpath(file)) in map_truth:
+                elem = BoatPhoto(map_truth[os.path.basename(os.path.normpath(file))], vgg16_feature, file)
+                dataset.append(elem)
+        return dataset
 
     def loadset(self):
-        list2 = self.parseArgosTesting("testing")
         list1 = self.parseArgosTraining("training")
-        print(list2)
-        print(list1)
+        list2 = self.parseArgosTesting("testing")
         print("training size:{} testing size:{}".format(list1.__len__(), list2.__len__()))
         return list1, list2
+
+    def _getnumberfiles(self, folders):
+        entries = 0
+        for folder in folders:
+            files = glob.glob(folder + "/*.jpg")
+            entries += len(files)
+        return entries

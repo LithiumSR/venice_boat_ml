@@ -7,7 +7,7 @@ import pandas as pd
 import seaborn as sn
 import matplotlib.pyplot as plt
 import numpy as np
-
+import tqdm
 
 class DataValidator:
     def __init__(self, set, split, mode, vstype="Water"):
@@ -21,13 +21,14 @@ class DataValidator:
         if self.mode == Mode.detection:
             self._kcrossvalidatedetection()
         else:
-            self.validate()
+            self._kcrossvalidateclassification()
 
     def _kcrossvalidatedetection(self):
         kf = KFold(n_splits=self.split, shuffle=True)
         kf.get_n_splits(self.set)
         truepositive, truenegative, falsepositive, falsenegative = [0] * 4
-        for train_index, test_index in kf.split(self.set):
+        print("Validating using kcross...")
+        for train_index, test_index in tqdm.tqdm(kf.split(self.set)):
             X_train, X_test = [], []
             for index in train_index:
                 X_train.append(self.set[index])
@@ -56,7 +57,7 @@ class DataValidator:
         for elem in self.set:
             tmp = [elem.features.flatten()]
             prediction = learner.classifier.predict(tmp)
-            print(prediction,"but its type is: ", elem.boatType)
+            # print(prediction,"but its type is: ", elem.boatType)
             if prediction == elem.boatType:
                 if prediction == self.vstype:
                     truepositive += 1
@@ -82,7 +83,7 @@ class DataValidator:
         matrix = confusion_matrix(y_true, y_prediction, labels=order)
         return matrix
 
-    def validate(self):
+    def _kcrossvalidateclassification(self):
         kf = KFold(n_splits=self.split)
         kf.get_n_splits(self.set)
         matrix = None
@@ -90,7 +91,8 @@ class DataValidator:
         for elem in self.set:
             order.add(elem.boatType)
         order = list(order)
-        for train_index, test_index in kf.split(self.set):
+        print("Validating using kcross...")
+        for train_index, test_index in tqdm.tqdm(kf.split(self.set)):
             X_train, X_test = [], []
             for index in train_index:
                 X_train.append(self.set[index])
@@ -106,7 +108,6 @@ class DataValidator:
             break
         matrix = matrix / self.split
         matrix = matrix.round()
-        print(matrix)
         np.set_printoptions(suppress=True)
         df = pd.DataFrame(matrix, index=order, columns=order)
         plt.figure(figsize=(30, 14))
