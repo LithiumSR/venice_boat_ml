@@ -92,7 +92,7 @@ class DataValidator:
             order.add(elem.boatType)
         order = list(order)
         print("Validating using kcross...")
-        for train_index, test_index in tqdm.tqdm(kf.split(self.set)):
+        for train_index, test_index in kf.split(self.set):
             X_train, X_test = [], []
             for index in train_index:
                 X_train.append(self.set[index])
