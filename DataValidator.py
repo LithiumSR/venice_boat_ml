@@ -1,20 +1,22 @@
-import DataLearner
 from DataLearner import BoatLearner
-from sklearn.model_selection import KFold
-
-from sklearn.metrics import confusion_matrix
-import pandas as pd
-import seaborn as sn
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sn
 import tqdm
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import KFold
+
+from DataLearner import BoatLearner
+
 
 class DataValidator:
-    def __init__(self, set, split, mode, vstype="Water"):
+    def __init__(self, set, split, mode, vstype="Water", kernel="linear"):
         self.set = set
         self.split = split
         self.mode = mode
         self.vstype = vstype.strip()
+        self.kernel = kernel
 
     def kcrossvalidate(self):
         from DataLoader import Mode
@@ -34,7 +36,7 @@ class DataValidator:
                 X_train.append(self.set[index])
             for index in test_index:
                 X_test.append(self.set[index])
-            learner = BoatLearner(X_train)
+            learner = BoatLearner(X_train, self.kernel)
             learner.learn()
             result = self._validatedetection(learner)
             print(result)
@@ -98,7 +100,7 @@ class DataValidator:
                 X_train.append(self.set[index])
             for index in test_index:
                 X_test.append(self.set[index])
-            learner = BoatLearner(X_train)
+            learner = BoatLearner(X_train, self.kernel)
             learner.learn()
             result = self._validateclassification(learner, order)
             if matrix is None:

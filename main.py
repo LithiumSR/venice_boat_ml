@@ -4,9 +4,9 @@ from DataLoader import BoatLoader, Mode, NetworkArchitecture
 from DataValidator import DataValidator
 
 
-def main(mode, inputclass, split):
+def main(mode, inputclass, split, kernel):
     pair = BoatLoader(mode, network=NetworkArchitecture.VGG19, vstype=inputclass).loadset()
-    validator = DataValidator(pair[0] + pair[1], split, mode)
+    validator = DataValidator(pair[0] + pair[1], split, mode, kernel)
     validator.kcrossvalidate()
     sys.exit(0)
 
@@ -20,6 +20,8 @@ if __name__ == '__main__':
                                                                       'is 3)')
     parser.add_argument("inputclass", nargs='?', default="water", help='Class to analyze when doing detection ('
                                                                        'default is Water)')
+    parser.add_argument("svmkernel", nargs='?', default="linear", help='Kernel to be used for SVM (default is the '
+                                                                      'linear kernel)')
     args = parser.parse_args()
 
     modeoperation = args.mode
@@ -41,4 +43,4 @@ if __name__ == '__main__':
     print("Using {} for a {} problem".format(args.network.upper(), args.mode.lower()))
     if modeoperation is not Mode.classification:
         print("Input class for detection is {}".format(args.inputclass))
-    main(modeoperation, args.inputclass, args.split)
+    main(modeoperation, args.inputclass, args.split, args.svmkernel)
