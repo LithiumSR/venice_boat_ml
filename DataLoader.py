@@ -34,8 +34,7 @@ class BoatLoader:
 
         list = []
         folders = [x[0] for x in os.walk(os.getcwd() + "/data/" + directory)]
-        print("Parsing folders of the ARGOS training set")
-        progressbar = tqdm.tqdm(total=self._getnumberfiles(folders))
+        progressbar = tqdm.tqdm(total=self._getnumberfiles(folders), desc="Parsing folders of the ARGOS training set")
         for folder in folders:
             files = glob.glob(folder + "/*.jpg")
             for file in files:
@@ -84,6 +83,7 @@ class BoatLoader:
                     if entry[1].strip() == "Mototopo corto":
                         entry[1] = "Mototopo"
                 elif self.vstype == "Water" and self.mode == Mode.detection:
+
                     if entry[1].strip() != "Water":
                         entry[1] = "Boat"
                 elif self.vstype != "Water" and self.mode == Mode.detection:
@@ -92,8 +92,7 @@ class BoatLoader:
                     if entry[1].strip() != self.vstype:
                         entry[1] = "Not" + self.vstype
                 map_truth[entry[0].strip()] = entry[1].strip().replace(" ", "").replace(":", "")
-        print("\nAnalyzing files of the ARGOS testing dataset")
-        for file in tqdm.tqdm(files):
+        for file in tqdm.tqdm(files, desc="Analyzing files of the ARGOS testing dataset"):
             img = image.load_img(file, target_size=(224, 224))
             img_data = image.img_to_array(img)
             img_data = np.expand_dims(img_data, axis=0)
@@ -107,14 +106,14 @@ class BoatLoader:
             from BoatPhoto import BoatPhoto
 
             if os.path.basename(os.path.normpath(file)) in map_truth:
-                elem = BoatPhoto(map_truth[os.path.basename(os.path.normpath(file))], vgg16_feature, file)
+                elem = BoatPhoto(map_truth[os.path.basename(os.path.normpath(file))], vgg16_feature, file, True)
                 dataset.append(elem)
         return dataset
 
     def loadset(self):
         list1 = self.parseArgosTraining("training")
         list2 = self.parseArgosTesting("testing")
-        print("training size:{} testing size:{}".format(list1.__len__(), list2.__len__()))
+        print("\ntraining size:{} testing size:{}".format(list1.__len__(), list2.__len__()))
         return list1, list2
 
     def _getnumberfiles(self, folders):
