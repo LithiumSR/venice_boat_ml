@@ -4,10 +4,13 @@ from DataLoader import BoatLoader, Mode, NetworkArchitecture
 from DataValidator import DataValidator
 
 
-def main(mode, inputclass, split, kernel):
+def main(mode, inputclass, split, kernel, default_testing):
     pair = BoatLoader(mode, network=NetworkArchitecture.VGG19, vstype=inputclass).loadset()
-    validator = DataValidator(pair[0] + pair[1], split, mode, kernel)
-    validator.kcrossvalidate()
+    validator = DataValidator(pair[0] + pair[1], split, mode, inputclass, kernel)
+    if default_testing:
+        validator.defaultvalidate()
+    else:
+        validator.kcrossvalidate()
     sys.exit(0)
 
 
@@ -18,10 +21,12 @@ if __name__ == '__main__':
     parser.add_argument("network", nargs='?', default="vgg16", help='Network architecture to do feature extraction')
     parser.add_argument("split", nargs='?', type=int, default=3, help='Number of split in kcross validation (default '
                                                                       'is 3)')
-    parser.add_argument("inputclass", nargs='?', default="water", help='Class to analyze when doing detection ('
+    parser.add_argument("inputclass", nargs='?', default="Water", help='Class to analyze when doing detection ('
                                                                        'default is Water)')
     parser.add_argument("svmkernel", nargs='?', default="linear", help='Kernel to be used for SVM (default is the '
-                                                                      'linear kernel)')
+                                                                       'linear kernel)')
+    parser.add_argument("default_testing", nargs='?', type=bool, default=False, help='Use default ARGOS testing to '
+                                                                                    'test the classifier')
     args = parser.parse_args()
 
     modeoperation = args.mode
@@ -43,4 +48,4 @@ if __name__ == '__main__':
     print("Using {} for a {} problem".format(args.network.upper(), args.mode.lower()))
     if modeoperation is not Mode.classification:
         print("Input class for detection is {}".format(args.inputclass))
-    main(modeoperation, args.inputclass, args.split, args.svmkernel)
+    main(modeoperation, args.inputclass, args.split, args.svmkernel, args.default_testing)
