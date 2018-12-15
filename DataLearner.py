@@ -1,10 +1,14 @@
 from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 
 
 class BoatLearner:
 
     def __init__(self, dataset, kernel="linear"):
-        self.classifier = SVC(kernel=kernel)
+        if kernel == "linear":
+            self.classifier = LinearSVC()
+        else:
+            self.classifier = SVC(kernel=kernel)
         self.dataset = dataset
 
     def learn(self):
