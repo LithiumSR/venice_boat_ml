@@ -15,7 +15,7 @@ def main(mode, inputclass, split, kernel, default_testing):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Let's do something with the ARGOS dataset!")
+    parser = argparse.ArgumentParser(description="Customization options using args")
     parser.add_argument("mode", nargs='?', default="classification", help='Mode of operation that can be detection or '
                                                                           'classification')
     parser.add_argument("network", nargs='?', default="vgg16", help='Network architecture to do feature extraction')
